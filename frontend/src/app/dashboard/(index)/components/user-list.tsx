@@ -30,14 +30,22 @@ export default function UserList() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<'createdAt' | 'name'>('createdAt');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
 
-  const fetchUsers = async (opts?: { search?: string }) => {
+  const fetchUsers = async (opts?: { search?: string; sortBy?: string; order?: string }) => {
     setLoading(true);
     setError("");
     try {
       const res = await axios.get("http://localhost:4000/users", {
         headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-        params: { page: pagination.page, limit: 10, q: opts?.search || search },
+        params: {
+          page: pagination.page,
+          limit: 10,
+          q: opts?.search || search,
+          sortBy: opts?.sortBy || sortBy,
+          order: opts?.order || order,
+        },
       });
       // API: { data: User[], meta: { page, limit, total, totalPages } }
       const apiUsers = (res.data.data || []).map((u: any) => ({
@@ -83,7 +91,7 @@ export default function UserList() {
     }, 500);
     return () => clearTimeout(handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, search]);
+  }, [pagination.page, search, sortBy, order]);
 
   const handleDelete = async () => {
     if (!selectedUser) return;
@@ -146,12 +154,20 @@ export default function UserList() {
         <Button size="icon" variant="ghost" className="border hidden md:flex" onClick={() => { setSearch(""); fetchUsers({ search: "" }); }}>
           <RefreshCwIcon />
         </Button>
-        <Button size="icon" variant="ghost" className="border hidden md:flex">
-          <CalendarIcon />
-        </Button>
-        <Button size="icon" variant="ghost" className="border hidden md:flex">
-          <FunnelIcon />
-        </Button>
+        <div className="relative hidden md:flex items-center">
+          <select
+            className="border rounded px-2 py-1 mr-2"
+            value={sortBy + '-' + order}
+            onChange={e => {
+              const [newSortBy, newOrder] = e.target.value.split('-');
+              setSortBy(newSortBy as 'createdAt' | 'name');
+              setOrder(newOrder as 'asc' | 'desc');
+            }}
+          >
+            <option value="createdAt-desc">En yeni</option>
+            <option value="name-asc">İsme göre (A-Z)</option>
+          </select>
+        </div>
         <Button size="icon" variant="ghost" className="border">
           <EllipsisVerticalIcon />
         </Button>
